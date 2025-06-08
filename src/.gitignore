@@ -25,5 +25,4 @@ Thumbs.db
 yarn-error.log
 /docker/mysql
 docker/mysql
-/src/vendor
-src/vendor/
+/vendor

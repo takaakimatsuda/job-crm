@@ -18,6 +18,7 @@ class UserSeeder extends Seeder
             'name' => 'テストユーザー',
             'email' => 'test@example.com',
             'password' => Hash::make('password'), // 平文でのログインは "password"
+            'email_verified_at' => now(),
         ]);
     }
 }

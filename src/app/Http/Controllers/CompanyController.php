@@ -36,7 +36,7 @@ class CompanyController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'status' => 'nullable|string|max:50',
-            'interest_level' => 'nullable|integer|min:1|max:5',
+            'hope_level' => 'nullable|integer|min:1|max:5',
             'memo' => 'nullable|string',
         ]);
 

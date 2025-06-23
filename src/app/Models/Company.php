@@ -13,6 +13,11 @@ class Company extends Model
         'name',
         'status',
         'hope_level',
+        'tags',
+        'contact_person',
+        'email',
+        'phone',
+        'website_url',
         'memo',
     ];
 }

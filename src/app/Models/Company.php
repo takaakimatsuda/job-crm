@@ -20,4 +20,10 @@ class Company extends Model
         'website_url',
         'memo',
     ];
+
+    public function interactions()
+    {
+        return $this->hasMany(Interaction::class);
+    }
+
 }

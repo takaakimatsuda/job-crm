@@ -5,6 +5,8 @@ use App\Http\Controllers\CompanyController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -28,5 +30,14 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('companies', CompanyController::class);
 });
+
+if (app()->environment('local')) {
+    Route::get('/dev-login', function () {
+        $user = User::first(); // 最初のユーザーに即ログイン
+        Auth::login($user);
+
+        return redirect('/companies'); // 任意の遷移先
+    });
+}
 
 require __DIR__.'/auth.php';

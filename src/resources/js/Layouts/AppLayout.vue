@@ -6,16 +6,28 @@ const sidebarOpen = ref(true)
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
 }
+
+const userMenuOpen = ref(false)
+const toggleUserMenu = () => {
+  userMenuOpen.value = !userMenuOpen.value
+}
+
+// ダミーユーザー（実際は props で受け取る）
+const user = {
+  name: 'matsudatakaaki@example.com',
+}
 </script>
 
 <template>
   <Head title="Job CRM" />
 
-  <div class="min-h-screen flex bg-gray-100 text-gray-800">
-    <!-- Sidebar Wrapper -->
+  <div class="min-h-screen flex bg-gray-100 text-gray-800 relative">
+    <!-- Sidebar -->
     <Transition name="slide-fade">
-      <div v-if="sidebarOpen" class="w-64 bg-white shadow-md h-full fixed z-50 transition-all duration-300">
-        <!-- Sidebar content -->
+      <div
+        v-if="sidebarOpen"
+        class="w-64 bg-white shadow-md h-full fixed z-40 transition-all duration-300"
+      >
         <div class="p-6 text-xl font-bold border-b flex justify-between items-center">
           Job CRM
           <button @click="toggleSidebar" class="text-sm text-gray-500 hover:text-gray-800">
@@ -29,21 +41,62 @@ const toggleSidebar = () => {
       </div>
     </Transition>
 
-    <!-- Sidebar collapsed trigger -->
+    <!-- Collapsed Sidebar Button -->
     <div
       v-if="!sidebarOpen"
-      class="w-6 h-full bg-white shadow-md fixed z-50 flex items-start justify-center pt-6"
+      class="w-6 h-full bg-white shadow-md fixed z-30 flex items-start justify-center pt-6"
     >
-      <button @click="toggleSidebar" class="text-sm text-gray-500 hover:text-gray-800">
-        ▶︎
-      </button>
+      <button @click="toggleSidebar" class="text-sm text-gray-500 hover:text-gray-800">▶︎</button>
     </div>
 
     <!-- Main Content -->
-    <div :class="[sidebarOpen ? 'ml-64' : 'ml-6']" class="flex-1 transition-all duration-300">
-      <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold">Job CRM</h1>
-        <!-- モバイル用ボタン（必要に応じて） -->
+    <div
+      :class="[sidebarOpen ? 'ml-64' : 'ml-6']"
+      class="flex-1 transition-all duration-300 relative"
+    >
+      <header class="bg-white shadow px-6 py-4 flex justify-between items-center relative z-20">
+        <!-- ロゴ：ダッシュボードへのリンク -->
+        <Link href="/dashboard" class="text-xl font-bold hover:text-blue-600 transition">
+          Job CRM
+        </Link>
+
+        <!-- ユーザーメニュー -->
+        <div class="relative z-30">
+          <button @click="toggleUserMenu" class="text-gray-600 hover:text-gray-800">
+            <!-- ユーザーアイコン -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-8 h-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5.121 17.804A9 9 0 1118.88 6.196 9 9 0 015.121 17.804zM12 14a4 4 0 100-8 4 4 0 000 8zm0 2c-2.21 0-4.2 1.045-5.48 2.705A7.956 7.956 0 0012 20a7.956 7.956 0 005.48-1.295A6.97 6.97 0 0012 16z"
+              />
+            </svg>
+          </button>
+
+          <!-- ドロップダウン -->
+          <div
+            v-show="userMenuOpen"
+            class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow-lg z-40"
+          >
+            <div class="px-4 py-2 border-b text-sm text-gray-700">{{ user.name }}</div>
+            <Link href="/profile" class="block px-4 py-2 text-sm hover:bg-gray-100">プロフィール</Link>
+            <form method="POST" action="/logout" class="block">
+              <button
+                type="submit"
+                class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                ログアウト
+              </button>
+            </form>
+          </div>
+        </div>
       </header>
 
       <main class="max-w-7xl mx-auto p-6">

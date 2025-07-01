@@ -41,34 +41,42 @@ onUnmounted(() => {
 
       <!-- カードリスト -->
       <div class="space-y-4">
-        <div
+        <a
           v-for="company in companies"
           :key="company.id"
-          class="bg-white border border-gray-200 rounded-lg shadow-md p-4 transition hover:shadow-lg"
+          :href="`/companies/${company.id}`"
+          class="block bg-white border border-gray-200 rounded-lg shadow-md p-4 transition hover:shadow-lg hover:bg-gray-50"
         >
           <div class="flex justify-between items-start">
-            <div>
-              <h2 class="text-xl font-semibold text-gray-800">{{ company.name }}</h2>
-              <p class="text-sm text-gray-500 mt-1">ステータス: <span class="font-medium">{{ company.status }}</span></p>
-              <p class="text-sm text-gray-500 mt-1">メモ: <span class="text-gray-700">{{ company.memo || '（なし）' }}</span></p>
-            </div>
-            <!-- 希望度スター -->
-            <div class="flex items-center">
-              <template v-for="i in 5" :key="`star-${company.id}-${i}`">
-                <svg
-                  class="w-5 h-5"
-                  :class="i <= company.hope_level ? 'text-yellow-400' : 'text-gray-300'"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.95a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.95c.3.921-.755 1.688-1.538 1.118l-3.371-2.448a1 1 0 00-1.175 0l-3.371 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.95a1 1 0 00-.364-1.118L2.22 9.377c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.95z"
-                  />
-                </svg>
-              </template>
-            </div>
-          </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800">{{ company.name }}</h2>
+          <p class="text-sm text-gray-500 mt-1">
+            ステータス:
+            <span class="font-medium">{{ company.status }}</span>
+          </p>
+          <p class="text-sm text-gray-500 mt-1">
+            メモ:
+            <span class="text-gray-700">{{ company.memo || '（なし）' }}</span>
+          </p>
         </div>
+
+        <!-- 希望度スター -->
+        <div class="flex items-center">
+          <template v-for="i in 5" :key="`star-${company.id}-${i}`">
+            <svg
+          class="w-5 h-5"
+          :class="i <= company.hope_level ? 'text-yellow-400' : 'text-gray-300'"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+            >
+          <path
+            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.95a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.95c.3.921-.755 1.688-1.538 1.118l-3.371-2.448a1 1 0 00-1.175 0l-3.371 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.95a1 1 0 00-.364-1.118L2.22 9.377c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.95z"
+          />
+            </svg>
+          </template>
+        </div>
+          </div>
+        </a>
       </div>
     </div>
 

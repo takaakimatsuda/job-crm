@@ -1,5 +1,5 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3'
+import { useForm, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref } from 'vue'
 
@@ -42,6 +42,16 @@ function submit() {
 <template>
   <AppLayout title="企業登録">
     <div class="max-w-3xl mx-auto p-6 space-y-6">
+      <!-- 戻るリンク -->
+      <div class="mt-4 mb-2 ml-1">
+        <Link href="/companies" class="text-sm text-blue-600 hover:underline inline-flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          企業一覧に戻る
+        </Link>
+      </div>
+
       <h1 class="text-2xl font-bold">企業新規登録</h1>
 
       <form @submit.prevent="submit" class="space-y-6">
@@ -71,26 +81,41 @@ function submit() {
           <label class="block mb-1">希望度</label>
           <div class="flex space-x-1">
             <template v-for="i in 5" :key="i">
-              <svg @click="setRating(i)" @mouseover="setHover(i)" @mouseleave="clearHover"
-                xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 cursor-pointer transition-transform hover:scale-125"
+              <svg
+                @click="setRating(i)"
+                @mouseover="setHover(i)"
+                @mouseleave="clearHover"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 cursor-pointer transition-transform hover:scale-125"
                 :class="[(hoverRating || form.hope_level) >= i ? 'text-yellow-400' : 'text-gray-300']"
-                fill="currentColor" viewBox="0 0 20 20">
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path
-                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.216 3.736a1 1 0 00.95.69h3.925c.969 0 1.371 1.24.588 1.81l-3.178 2.31a1 1 0 00-.364 1.118l1.216 3.736c.3.921-.755 1.688-1.538 1.118l-3.178-2.31a1 1 0 00-1.175 0l-3.178 2.31c-.783.57-1.838-.197-1.538-1.118l1.216-3.736a1 1 0 00-.364-1.118L2.292 9.163c-.783-.57-.38-1.81.588-1.81h3.925a1 1 0 00.95-.69l1.216-3.736z" />
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.216 3.736a1 1 0 00.95.69h3.925c.969 0 1.371 1.24.588 1.81l-3.178 2.31a1 1 0 00-.364 1.118l1.216 3.736c.3.921-.755 1.688-1.538 1.118l-3.178-2.31a1 1 0 00-1.175 0l-3.178 2.31c-.783.57-1.838-.197-1.538-1.118l1.216-3.736a1 1 0 00-.364-1.118L2.292 9.163c-.783-.57-.38-1.81.588-1.81h3.925a1 1 0 00.95-.69l1.216-3.736z"
+                />
               </svg>
             </template>
           </div>
           <div v-if="form.errors.hope_level" class="text-red-500 text-sm">{{ form.errors.hope_level }}</div>
         </div>
 
-        <!-- タグ（自由入力） -->
+        <!-- タグ -->
         <div>
           <label class="block mb-1">タグ</label>
-          <input v-model="newTag" @keydown.enter.prevent="addTag" type="text" class="w-full border p-2 rounded mb-2"
-            placeholder="タグを入力してEnterで追加" />
+          <input
+            v-model="newTag"
+            @keydown.enter.prevent="addTag"
+            type="text"
+            class="w-full border p-2 rounded mb-2"
+            placeholder="タグを入力してEnterで追加"
+          />
           <div class="flex flex-wrap gap-2">
-            <span v-for="(tag, index) in form.tags" :key="index"
-              class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+            <span
+              v-for="(tag, index) in form.tags"
+              :key="index"
+              class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+            >
               {{ tag }}
               <button type="button" @click="removeTag(index)" class="text-blue-500 hover:text-red-500">×</button>
             </span>
@@ -105,14 +130,14 @@ function submit() {
           <div v-if="form.errors.contact_person" class="text-red-500 text-sm">{{ form.errors.contact_person }}</div>
         </div>
 
-        <!-- メールアドレス -->
+        <!-- メール -->
         <div>
           <label class="block mb-1">メールアドレス</label>
           <input v-model="form.email" type="email" class="w-full border p-2 rounded" />
           <div v-if="form.errors.email" class="text-red-500 text-sm">{{ form.errors.email }}</div>
         </div>
 
-        <!-- 電話番号 -->
+        <!-- 電話 -->
         <div>
           <label class="block mb-1">電話番号</label>
           <input v-model="form.phone" type="tel" class="w-full border p-2 rounded" />

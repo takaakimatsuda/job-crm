@@ -1,5 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { Link } from '@inertiajs/vue3'
 
 defineProps({
   company: Object
@@ -8,7 +9,17 @@ defineProps({
 
 <template>
   <AppLayout>
-    <!-- 🔹 企業詳細情報 -->
+    <!-- 戻るリンク（サイドバーと揃えた位置） -->
+    <div class="mt-4 mb-2 ml-6">
+      <Link href="/companies" class="text-sm text-blue-600 hover:underline inline-flex items-center">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        企業一覧に戻る
+      </Link>
+    </div>
+
+    <!-- 企業詳細情報カード -->
     <div class="px-10 py-8 border-b bg-white">
       <h1 class="text-3xl font-bold mb-2">{{ company.name }}</h1>
       <p class="text-gray-600 mb-1">ステータス：{{ company.status }}</p>
@@ -56,7 +67,7 @@ defineProps({
       </p>
     </div>
 
-    <!-- 🔸 履歴一覧（カード型） -->
+    <!-- 履歴一覧 -->
     <div class="px-10 py-8 bg-gray-100">
       <h2 class="text-xl font-bold mb-4">履歴</h2>
       <div v-if="company.interactions.length > 0">
@@ -80,7 +91,7 @@ defineProps({
       <div v-else class="text-gray-400 text-sm">履歴はまだ登録されていません。</div>
     </div>
 
-    <!-- ➕ 新規履歴登録 -->
+    <!-- 新規履歴登録 -->
     <div class="px-10 pb-10 bg-gray-100">
       <button
         class="mt-4 px-6 py-3 bg-black text-white rounded hover:bg-gray-800 transition"

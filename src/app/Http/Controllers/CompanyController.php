@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Inertia\Inertia;
 
 class CompanyController extends Controller
@@ -46,10 +48,16 @@ class CompanyController extends Controller
             'memo'           => 'nullable|string',
         ]);
 
-        // JSONとして保存（tags）
-        $validated['tags'] = json_encode($validated['tags'] ?? []);
+        // Company作成（tags除外）
+        $company = Company::create(Arr::except($validated, ['tags']));
 
-        Company::create($validated);
+        // タグ登録・紐づけ
+        if (!empty($validated['tags'])) {
+            foreach ($validated['tags'] as $tagName) {
+                $tag = Tag::firstOrCreate(['name' => $tagName]);
+                $company->tags()->attach($tag->id);
+            }
+        }
 
         return redirect()->route('companies.index')->with('success', '企業を登録しました。');
     }

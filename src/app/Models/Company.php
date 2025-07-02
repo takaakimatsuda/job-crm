@@ -21,6 +21,11 @@ class Company extends Model
         'memo',
     ];
 
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class);
+    }
+
     public function interactions()
     {
         return $this->hasMany(Interaction::class);

@@ -67,9 +67,7 @@ class CompanyController extends Controller
      */
     public function show(Company $company)
     {
-        // 必要に応じて関連情報も付ける
-        $company->load('interactions'); // ←後で履歴も使う前提でリレーションを準備
-
+        $company->load(['tags', 'interactions']); // ← tags を追加
         return Inertia::render('Company/Show', [
             'company' => $company,
         ]);

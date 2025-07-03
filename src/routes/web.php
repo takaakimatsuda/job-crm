@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\InteractionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,14 +29,23 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Companyリソース（CRUD）
     Route::resource('companies', CompanyController::class);
+
+    // Interactionの作成（Companyに紐づく）
+    Route::post('/companies/{company}/interactions', [InteractionController::class, 'store'])->name('interactions.store');
+
+    // Interactionの編集・更新・削除（ID単体で操作）
+    Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
+    Route::put('/interactions/{interaction}', [InteractionController::class, 'update'])->name('interactions.update');
+    Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroy'])->name('interactions.destroy');
 });
 
+// ローカル開発用の即ログインルート
 if (app()->environment('local')) {
     Route::get('/dev-login', function () {
         $user = User::first(); // 最初のユーザーに即ログイン
         Auth::login($user);
-
         return redirect('/companies'); // 任意の遷移先
     });
 }

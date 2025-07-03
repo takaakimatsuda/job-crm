@@ -1,15 +1,38 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
 
-defineProps({
+// ✅ propsから company を取得
+const { company } = defineProps({
   company: Object
 })
+
+const formVisible = ref(false)
+
+const form = ref({
+  interaction_date: new Date().toISOString().slice(0, 10),
+  type: '',
+  memo: ''
+})
+
+const submit = () => {
+  router.post(`/companies/${company.id}/interactions`, form.value, {
+    onSuccess: () => {
+      formVisible.value = false
+      form.value = {
+        interaction_date: new Date().toISOString().slice(0, 10),
+        type: '',
+        memo: ''
+      }
+    }
+  })
+}
 </script>
 
 <template>
   <AppLayout>
-    <!-- 戻るリンク（サイドバーと揃えた位置） -->
+    <!-- 戻るリンク -->
     <div class="mt-4 mb-2 ml-6">
       <Link href="/companies" class="text-sm text-blue-600 hover:underline inline-flex items-center">
         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -19,7 +42,7 @@ defineProps({
       </Link>
     </div>
 
-    <!-- 企業詳細情報カード -->
+    <!-- 企業詳細 -->
     <div class="px-10 py-8 border-b bg-white">
       <h1 class="text-3xl font-bold mb-2">{{ company.name }}</h1>
       <p class="text-gray-600 mb-1">ステータス：{{ company.status }}</p>
@@ -31,10 +54,10 @@ defineProps({
         タグ：
         <span
           v-for="tag in company.tags"
-          :key="tag"
+          :key="tag.id"
           class="inline-block text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded-full mr-2"
         >
-          {{ tag }}
+          {{ tag.name }}
         </span>
       </p>
       <p class="mb-1">担当者：{{ company.contact_person || '未設定' }}</p>
@@ -91,14 +114,60 @@ defineProps({
       <div v-else class="text-gray-400 text-sm">履歴はまだ登録されていません。</div>
     </div>
 
-    <!-- 新規履歴登録 -->
+    <!-- 新規履歴登録フォーム -->
     <div class="px-10 pb-10 bg-gray-100">
       <button
+        v-if="!formVisible"
         class="mt-4 px-6 py-3 bg-black text-white rounded hover:bg-gray-800 transition"
-        @click="() => console.log('履歴追加ボタンがクリックされました')"
+        @click="formVisible = true"
       >
         ＋ 新規履歴を登録
       </button>
+
+      <div v-else class="bg-white border p-6 rounded-xl shadow-md mt-4">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">日付</label>
+          <input
+            type="date"
+            v-model="form.interaction_date"
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">種別</label>
+          <select
+            v-model="form.type"
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+          >
+            <option disabled value="">選択してください</option>
+            <option>電話</option>
+            <option>面談</option>
+            <option>メール</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">メモ</label>
+          <textarea
+            v-model="form.memo"
+            rows="4"
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+          ></textarea>
+        </div>
+        <div class="flex gap-3">
+          <button
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
+            @click="submit"
+          >
+            登録する
+          </button>
+          <button
+            class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+            @click="formVisible = false"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>

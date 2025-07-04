@@ -26,5 +26,25 @@ class InteractionController extends Controller
         return redirect()->route('companies.show', $company->id);
     }
 
-    // 編集・更新・削除も今後追加予定
+    // 編集内容の保存
+    public function update(Request $request, Interaction $interaction)
+    {
+        $request->validate([
+            'interaction_date' => 'required|date',
+            'type' => 'required|string',
+            'memo' => 'nullable|string',
+        ]);
+
+        $interaction->update($request->only('interaction_date', 'type', 'memo'));
+
+        return back(); // Vue側が自動更新してくれるためリダイレクトでOK
+    }
+
+    // 削除処理
+    public function destroy(Interaction $interaction)
+    {
+        $interaction->delete();
+
+        return back(); // 同様に画面側でリストが更新される
+    }
 }

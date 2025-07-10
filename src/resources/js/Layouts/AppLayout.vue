@@ -1,6 +1,8 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { Head, Link, usePage } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+
+const page = usePage()
 
 const sidebarOpen = ref(true)
 const toggleSidebar = () => {
@@ -16,6 +18,14 @@ const toggleUserMenu = () => {
 const user = {
   name: 'matsudatakaaki@example.com',
 }
+
+// 現在のページ名を動的に表示
+const pageTitle = computed(() => {
+  const url = page.url
+  if (url.startsWith('/companies')) return '企業一覧'
+  if (url.startsWith('/dashboard')) return 'ダッシュボード'
+  return 'Job CRM'
+})
 </script>
 
 <template>
@@ -35,8 +45,8 @@ const user = {
           </button>
         </div>
         <nav class="mt-4 space-y-2 px-4">
-          <Link href="/companies" class="block px-2 py-2 rounded hover:bg-gray-100">企業一覧</Link>
           <Link href="/dashboard" class="block px-2 py-2 rounded hover:bg-gray-100">ダッシュボード</Link>
+          <Link href="/companies" class="block px-2 py-2 rounded hover:bg-gray-100">企業一覧</Link>
         </nav>
       </div>
     </Transition>
@@ -55,10 +65,10 @@ const user = {
       class="flex-1 transition-all duration-300 relative"
     >
       <header class="bg-white shadow px-6 py-4 flex justify-between items-center relative z-20">
-        <!-- ロゴ：ダッシュボードへのリンク -->
-        <Link href="/dashboard" class="text-xl font-bold hover:text-blue-600 transition">
-          Job CRM
-        </Link>
+        <!-- 現在のページ名を表示 -->
+        <h1 class="text-xl font-bold">
+          {{ pageTitle }}
+        </h1>
 
         <!-- ユーザーメニュー -->
         <div class="relative z-30">

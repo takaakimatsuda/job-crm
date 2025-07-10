@@ -30,8 +30,6 @@ onUnmounted(() => {
     <Head title="企業一覧" />
 
     <div class="p-6 space-y-6">
-      <h1 class="text-2xl font-bold">企業一覧</h1>
-
       <a
         href="/companies/create"
         class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

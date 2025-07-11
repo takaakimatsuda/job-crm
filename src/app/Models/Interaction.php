@@ -17,9 +17,12 @@ class Interaction extends Model
         'summary',
     ];
 
+    protected $casts = [
+        'interaction_date' => 'date',
+    ];
+
     public function company()
     {
         return $this->belongsTo(Company::class);
     }
 }
-

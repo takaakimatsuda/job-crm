@@ -13,12 +13,36 @@ class CompanyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $companies = Company::latest()->get();
+        $query = Company::query();
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('hope_level')) {
+            $query->where('hope_level', $request->hope_level);
+        }
+
+        // 複数タグ（OR検索）
+        if ($request->filled('tags')) {
+            $tagNames = $request->input('tags');
+            $query->whereHas('tags', function ($q) use ($tagNames) {
+                $q->whereIn('name', $tagNames);
+            });
+        }
+
+        $companies = $query->with('tags')->latest()->get();
 
         return Inertia::render('Company/Index', [
-            'companies' => $companies,
+            'companies'     => $companies,
+            'filters'       => $request->only(['name', 'status', 'hope_level', 'tags']),
+            'availableTags' => Tag::all(['id', 'name']),
         ]);
     }
 

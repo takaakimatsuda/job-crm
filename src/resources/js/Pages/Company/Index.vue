@@ -1,7 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps({
   companies: Array,
@@ -21,7 +21,7 @@ const toggleTag = (tagName) => {
     selectedTags.value.splice(index, 1)
   } else {
     selectedTags.value.push(tagName)
-    selectedTags.value = [...new Set(selectedTags.value)] // ← 重複排除
+    selectedTags.value = [...new Set(selectedTags.value)]
   }
   applySearch()
 }
@@ -38,10 +38,13 @@ const applySearch = () => {
     {
       preserveState: true,
       replace: true,
-      preserveScroll: true
+      preserveScroll: true,
     }
   )
 }
+
+// 🔍 入力値の変更に反応して applySearch 発火
+watch([searchName, searchStatus, searchHopeLevel], applySearch)
 
 const onScroll = () => {
   showScrollTop.value = window.scrollY > 200

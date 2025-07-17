@@ -40,7 +40,8 @@ function submit() {
 </script>
 
 <template>
-  <AppLayout title="企業登録">
+  <AppLayout>
+    <Head title="企業登録" />
     <div class="max-w-3xl mx-auto p-6 space-y-6">
       <!-- 戻るリンク -->
       <div class="mt-4 mb-2 ml-1">
@@ -51,8 +52,6 @@ function submit() {
           企業一覧に戻る
         </Link>
       </div>
-
-      <h1 class="text-2xl font-bold">企業新規登録</h1>
 
       <form @submit.prevent="submit" class="space-y-6">
         <!-- 企業名 -->

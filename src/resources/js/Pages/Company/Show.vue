@@ -75,7 +75,14 @@ const deleteInteraction = (interactionId) => {
     </div>
 
     <!-- 企業詳細 -->
-    <div class="px-10 py-8 border-b bg-white">
+    <div class="relative px-10 py-8 border-b bg-white">
+      <Link
+        :href="`/companies/${company.id}/edit`"
+        class="absolute top-4 right-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+      >
+        編集する
+      </Link>
+
       <h1 class="text-3xl font-bold mb-2">{{ company.name }}</h1>
       <p class="text-gray-600 mb-1">ステータス：{{ company.status }}</p>
       <p class="mb-1">
@@ -110,7 +117,19 @@ const deleteInteraction = (interactionId) => {
               <span class="text-lg">💬</span>
               <h3 class="text-md font-semibold text-gray-900">{{ interaction.type }}</h3>
             </div>
-            <div class="text-sm text-gray-500">{{ interaction.interaction_date }}</div>
+            <div class="text-sm text-gray-500">
+              {{
+                new Date(interaction.interaction_date).toLocaleString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                  timeZone: 'Asia/Tokyo'
+                })
+              }}
+            </div>
           </div>
 
           <div v-if="editingId === interaction.id" class="mt-2 space-y-2">
@@ -132,18 +151,14 @@ const deleteInteraction = (interactionId) => {
             <div class="absolute bottom-3 right-4 flex gap-2">
               <!-- 編集アイコン -->
               <button @click="startEdit(interaction)" class="text-gray-500 hover:text-blue-600 transition" title="編集">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
               <!-- 削除アイコン -->
               <button @click="() => deleteInteraction(interaction.id)" class="text-gray-500 hover:text-red-500 transition" title="削除">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M6 18L18 6M6 6l12 12" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>

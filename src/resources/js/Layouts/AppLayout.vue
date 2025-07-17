@@ -22,6 +22,7 @@ const user = {
 // 現在のページ名を動的に表示
 const pageTitle = computed(() => {
   const url = page.url
+  if (url.startsWith('/companies/create')) return '企業登録'
   if (url.startsWith('/companies')) return '企業一覧'
   if (url.startsWith('/dashboard')) return 'ダッシュボード'
   return 'Job CRM'

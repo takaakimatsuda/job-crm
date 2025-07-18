@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { Link, router, useForm } from '@inertiajs/vue3'
+import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
 const { company } = defineProps({
@@ -60,10 +60,17 @@ const deleteInteraction = (interactionId) => {
     router.delete(`/interactions/${interactionId}`)
   }
 }
+
+const page = usePage()
+const flashMessage = page.props.flash?.success ?? null
 </script>
 
 <template>
   <AppLayout>
+    <!-- フラッシュメッセージ表示 -->
+    <div v-if="flashMessage" class="bg-green-100 text-green-800 px-4 py-2 rounded mb-4">
+      {{ flashMessage }}
+    </div>
     <!-- 戻るリンク -->
     <div class="mt-4 mb-2 ml-6">
       <Link href="/companies" class="text-sm text-blue-600 hover:underline inline-flex items-center">

@@ -91,7 +91,7 @@ class CompanyController extends Controller
      */
     public function show(Company $company)
     {
-        $company->load(['tags', 'interactions']); // ← tags を追加
+        $company->load(['tags', 'interactions']);
         return Inertia::render('Company/Show', [
             'company' => $company,
         ]);
@@ -102,7 +102,10 @@ class CompanyController extends Controller
      */
     public function edit(Company $company)
     {
-        //
+        $company->load('tags');
+        return Inertia::render('Company/Edit', [
+            'company' => $company,
+        ]);
     }
 
     /**
@@ -110,7 +113,35 @@ class CompanyController extends Controller
      */
     public function update(Request $request, Company $company)
     {
-        //
+        $validated = $request->validate([
+            'name'           => 'required|string|max:255',
+            'status'         => 'nullable|string|max:50',
+            'hope_level'     => 'nullable|integer|min:1|max:5',
+            'tags'           => 'nullable|array',
+            'tags.*'         => 'string|max:50',
+            'contact_person' => 'nullable|string|max:255',
+            'email'          => 'nullable|email|max:255',
+            'phone'          => 'nullable|string|max:50',
+            'website_url'    => 'nullable|url|max:255',
+            'memo'           => 'nullable|string',
+        ]);
+
+        // Company本体を更新（tags除外）
+        $company->update(Arr::except($validated, ['tags']));
+
+        // タグの再紐づけ
+        $company->tags()->sync([]);
+        if (!empty($validated['tags'])) {
+            foreach ($validated['tags'] as $tagName) {
+                $tag = Tag::firstOrCreate(['name' => $tagName]);
+                $company->tags()->attach($tag->id);
+            }
+        }
+
+        // フラッシュメッセージをセッションにセット
+        return redirect()
+            ->route('companies.show', $company->id)
+            ->with('success', '企業情報を更新しました。');
     }
 
     /**

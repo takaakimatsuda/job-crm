@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Tag;
+use App\Services\ChatGptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Inertia\Inertia;
@@ -150,5 +151,31 @@ class CompanyController extends Controller
     public function destroy(Company $company)
     {
         //
+    }
+
+    /**
+     * 会社詳細ページから「AIアクション提案を生成」ボタンで叩く
+     * POST /companies/{company}/ai/advise
+     */
+    public function advise(Request $request, Company $company, ChatGptService $gpt)
+    {
+        // 認可を使うなら有効化（必要なければコメントアウトのままでもOK）
+        // $this->authorize('view', $company);
+
+        // 直近の履歴を取得（interaction_date の降順）
+        $interactions = $company->interactions()
+            ->orderByDesc('interaction_date')
+            ->limit(5)
+            ->get(['interaction_date', 'type', 'memo']);
+
+        if ($interactions->isEmpty() && !($company->memo ?? null) && !($company->status ?? null)) {
+            return back()->with('error', '提案に必要な情報（履歴やメモ、ステータス）が不足しています。');
+        }
+
+        $advice = $gpt->adviseForCompany($company->loadMissing('tags'), $interactions);
+
+        return back()
+            ->with('ai_advice', $advice)
+            ->with('success', 'AIアクション提案を生成しました。');
     }
 }

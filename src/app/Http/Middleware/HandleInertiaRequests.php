@@ -36,6 +36,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+                // ★ 追加：AI提案のテキストをフロントへ
+                'ai_advice' => fn() => $request->session()->get('ai_advice')
             ],
         ];
     }

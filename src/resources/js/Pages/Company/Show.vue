@@ -1,12 +1,15 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Link, router, useForm, usePage } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const { company } = defineProps({
   company: Object
 })
 
+// ------------------------
+// 既存：履歴 CRUD 周り
+// ------------------------
 const formVisible = ref(false)
 const editingId = ref(null)
 
@@ -61,16 +64,41 @@ const deleteInteraction = (interactionId) => {
   }
 }
 
+// ------------------------
+// 追加：AIアクション提案
+// ------------------------
 const page = usePage()
-const flashMessage = page.props.flash?.success ?? null
+
+// フラッシュ（success / error / ai_advice）を Inertia 共有から取得
+const flashSuccess = computed(() => page.props.flash?.success ?? null)
+const flashError   = computed(() => page.props.flash?.error ?? null)
+const aiAdvice     = computed(() => page.props.flash?.ai_advice ?? '')
+
+// 生成中のローディング状態
+const isGenerating = ref(false)
+
+// 空フォームで POST するだけ（サーバ側で company と直近履歴から生成）
+const aiForm = useForm({})
+
+const generateAdvice = () => {
+  aiForm.post(`/companies/${company.id}/ai/advise`, {
+    preserveScroll: true,
+    onStart: () => { isGenerating.value = true },
+    onFinish: () => { isGenerating.value = false },
+  })
+}
 </script>
 
 <template>
   <AppLayout>
     <!-- フラッシュメッセージ表示 -->
-    <div v-if="flashMessage" class="bg-green-100 text-green-800 px-4 py-2 rounded mb-4">
-      {{ flashMessage }}
+    <div v-if="flashSuccess" class="bg-green-100 text-green-800 px-4 py-2 rounded mb-4 mx-6">
+      {{ flashSuccess }}
     </div>
+    <div v-if="flashError" class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4 mx-6">
+      {{ flashError }}
+    </div>
+
     <!-- 戻るリンク -->
     <div class="mt-4 mb-2 ml-6">
       <Link href="/companies" class="text-sm text-blue-600 hover:underline inline-flex items-center">
@@ -91,13 +119,21 @@ const flashMessage = page.props.flash?.success ?? null
       </Link>
 
       <h1 class="text-3xl font-bold mb-2">{{ company.name }}</h1>
-      <p class="text-gray-600 mb-1">ステータス：{{ company.status }}</p>
+      <p class="text-gray-600 mb-1">ステータス：{{ company.status || '未設定' }}</p>
       <p class="mb-1">
-        希望度：<span v-for="n in company.hope_level" :key="n">⭐️</span>
+        希望度：
+        <template v-if="company.hope_level">
+          <span v-for="n in company.hope_level" :key="n">⭐️</span>
+        </template>
+        <template v-else>-</template>
       </p>
       <p v-if="company.tags?.length" class="mb-2">
         タグ：
-        <span v-for="tag in company.tags" :key="tag.id" class="inline-block text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded-full mr-2">{{ tag.name }}</span>
+        <span
+          v-for="tag in company.tags"
+          :key="tag.id ?? tag.name"
+          class="inline-block text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded-full mr-2"
+        >{{ tag.name }}</span>
       </p>
       <p class="mb-1">担当者：{{ company.contact_person || '未設定' }}</p>
       <p class="mb-1">
@@ -114,11 +150,41 @@ const flashMessage = page.props.flash?.success ?? null
       <p class="mt-4 text-gray-700 whitespace-pre-line">メモ：{{ company.memo || 'なし' }}</p>
     </div>
 
+    <!-- ☆ AIアクション提案ブロック -->
+    <div class="px-10 py-8 bg-gray-50">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-md">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">AIアクション提案</h2>
+          <button
+            @click="generateAdvice"
+            class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition disabled:opacity-60"
+            :disabled="isGenerating"
+          >
+            <span v-if="isGenerating">生成中...</span>
+            <span v-else>生成する</span>
+          </button>
+        </div>
+
+        <div class="mt-4 whitespace-pre-wrap text-gray-800 leading-relaxed">
+          <template v-if="aiAdvice && aiAdvice.length">
+            {{ aiAdvice }}
+          </template>
+          <template v-else>
+            まだAI提案は生成していません。右上の「生成する」をクリックしてください。
+          </template>
+        </div>
+      </div>
+    </div>
+
     <!-- 履歴一覧 -->
     <div class="px-10 py-8 bg-gray-100">
       <h2 class="text-xl font-bold mb-4">履歴</h2>
-      <div v-if="company.interactions.length > 0">
-        <div v-for="interaction in [...company.interactions].sort((a, b) => b.interaction_date.localeCompare(a.interaction_date))" :key="interaction.id" class="bg-white border border-gray-200 rounded-xl p-5 mb-4 shadow-md relative">
+      <div v-if="company.interactions?.length > 0">
+        <div
+          v-for="interaction in [...company.interactions].sort((a, b) => b.interaction_date.localeCompare(a.interaction_date))"
+          :key="interaction.id"
+          class="bg-white border border-gray-200 rounded-xl p-5 mb-4 shadow-md relative"
+        >
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-2">
               <span class="text-lg">💬</span>

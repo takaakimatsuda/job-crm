@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CompanyAiController; // ★ 追加
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin'      => Route::has('login'),
         'canRegister'   => Route::has('register'),
-        'laravelVersion'=> Application::VERSION,
+        'laravelVersion' => Application::VERSION,
         'phpVersion'    => PHP_VERSION,
     ]);
 });
@@ -40,6 +41,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
     Route::put('/interactions/{interaction}', [InteractionController::class, 'update'])->name('interactions.update');
     Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroy'])->name('interactions.destroy');
+
+    // ★ AI提案（Company 詳細画面から叩く）
+    Route::post('/companies/{company}/ai/advise', [CompanyAiController::class, 'advise'])
+        ->name('companies.ai.advise');
+    // 連打対策を入れるなら（RateLimiter定義済み前提）
+    // ->middleware('throttle:ai');
 });
 
 // ローカル開発用の即ログインルート
@@ -51,4 +58,4 @@ if (app()->environment('local')) {
     });
 }
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

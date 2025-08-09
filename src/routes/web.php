@@ -4,7 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CompanyAiController; // ★ 追加
+use App\Http\Controllers\CompanyAiController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -44,9 +44,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ★ AI提案（Company 詳細画面から叩く）
     Route::post('/companies/{company}/ai/advise', [CompanyAiController::class, 'advise'])
-        ->name('companies.ai.advise');
-    // 連打対策を入れるなら（RateLimiter定義済み前提）
-    // ->middleware('throttle:ai');
+        ->name('companies.ai.advise')
+        ->middleware('throttle:ai');
 });
 
 // ローカル開発用の即ログインルート

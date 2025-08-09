@@ -10,36 +10,73 @@ use Illuminate\Support\Str;
 
 class ChatGptService
 {
+    /** 共通：OpenAI呼び出し */
+    private function callOpenAi(array $payload)
+    {
+        $key = config('services.openai.key');
+        if (blank($key)) {
+            // サーバ側で早期終了（UIでモーダル誘導しやすい固定文言）
+            return response()->json(['message' => 'OPENAI_API_KEYが未設定です。環境変数を設定してください。'], 422);
+        }
+
+        $res = Http::withToken($key)
+            ->timeout(20)
+            ->retry(1, 200) // 軽いリトライ1回だけ
+            ->acceptJson()
+            ->post('https://api.openai.com/v1/chat/completions', $payload);
+
+        // 失敗時はここでメッセージ化（未使用警告の解消ポイント）
+        if ($res->failed()) {
+            $msg = $this->handleOpenAiError($res);
+            // 429ならRetry-Afterヘッダをログ＆付加
+            $retry = $res->header('Retry-After');
+            if ($res->status() === 429 && $retry) {
+                $msg .= "（約{$retry}秒後に再試行可）";
+            }
+            return response()->json(['message' => $msg], $res->status() ?: 400)
+                ->withHeaders($retry ? ['Retry-After' => $retry] : []);
+        }
+
+        return $res;
+    }
+
     /**
      * 既存：メモ1件を要約（＋1文アクション）
      */
     public function summarize(string $memo): string
     {
         try {
-            $response = Http::withToken(config('services.openai.key'))
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => config('services.openai.model', 'gpt-3.5-turbo'),
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'あなたは優秀なキャリアアドバイザーです。以下のやり取り内容をもとに、1.要約（1文）、2.次にやるべき具体的なアクション（1文）を日本語で出力してください。'
-                        ],
-                        ['role' => 'user', 'content' => $memo],
+            $res = $this->callOpenAi([
+                'model' => config('services.openai.model', 'gpt-3.5-turbo'),
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'あなたは優秀なキャリアアドバイザーです。以下のやり取り内容をもとに、1.要約（1文）、2.次にやるべき具体的なアクション（1文）を日本語で出力してください。'
                     ],
-                ]);
+                    ['role' => 'user', 'content' => $memo],
+                ],
+            ]);
 
-            $json = $response->json();
+            // 失敗時は callOpenAi が JSONレスポンス返すので拾ってそのまま文字列返却
+            if ($res instanceof \Illuminate\Http\Client\Response === false) {
+                // 念のため
+                return 'AIサービスに接続できませんでした。';
+            }
+            if ($res->failed()) {
+                return data_get($res->json(), 'message', '要約中にエラーが発生しました。');
+            }
+
+            $json = $res->json();
             Log::info('OpenAI GPT response (summarize)', $json ?? []);
 
-            if (isset($json['choices'][0]['message']['content'])) {
-                return $json['choices'][0]['message']['content'];
+            if ($text = data_get($json, 'choices.0.message.content')) {
+                return trim($text);
             }
-            if (isset($json['error']['message'])) {
-                return 'OpenAIエラー: ' . $json['error']['message'];
+            if ($err = data_get($json, 'error.message')) {
+                return 'OpenAIエラー: ' . $err;
             }
-
             return 'GPT応答の解析に失敗しました。';
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('ChatGptService summarize エラー: ' . $e->getMessage());
             return '要約中にエラーが発生しました。';
         }
@@ -61,7 +98,7 @@ class ChatGptService
                 "タグ: " . ($tags ?: 'なし'),
             ];
 
-            // 履歴（新しい順に最大5件）を要約入力向けに整形
+            // 履歴（新しい順に最大5件）
             $historyLines = $interactions
                 ->sortByDesc('interaction_date')
                 ->take(5)
@@ -90,32 +127,61 @@ PROMPT;
             $userPrompt = str_replace('{context}', implode("\n", $context), $userPrompt);
             $userPrompt = str_replace('{history}', $historyLines ?: '（履歴なし）', $userPrompt);
 
-            $response = Http::withToken(config('services.openai.key'))
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => config('services.openai.model', 'gpt-3.5-turbo'),
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'あなたは転職支援のプロフェッショナルです。曖昧表現を避け、実行可能で具体的な指示を簡潔に提案してください。'
-                        ],
-                        ['role' => 'user', 'content' => $userPrompt],
+            $res = $this->callOpenAi([
+                'model' => config('services.openai.model', 'gpt-3.5-turbo'),
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'あなたは転職支援のプロフェッショナルです。曖昧表現を避け、実行可能で具体的な指示を簡潔に提案してください。'
                     ],
-                ]);
+                    ['role' => 'user', 'content' => $userPrompt],
+                ],
+            ]);
 
-            $json = $response->json();
+            if ($res instanceof \Illuminate\Http\Client\Response === false) {
+                return 'AIサービスに接続できませんでした。';
+            }
+            if ($res->failed()) {
+                return data_get($res->json(), 'message', 'AI提案生成中にエラーが発生しました。');
+            }
+
+            $json = $res->json();
             Log::info('OpenAI GPT response (adviseForCompany)', $json ?? []);
 
-            if (isset($json['choices'][0]['message']['content'])) {
-                return $json['choices'][0]['message']['content'];
+            if ($text = data_get($json, 'choices.0.message.content')) {
+                return trim($text);
             }
-            if (isset($json['error']['message'])) {
-                return 'OpenAIエラー: ' . $json['error']['message'];
+            if ($err = data_get($json, 'error.message')) {
+                return 'OpenAIエラー: ' . $err;
             }
-
             return 'GPT応答の解析に失敗しました。';
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('ChatGptService adviseForCompany エラー: ' . $e->getMessage());
             return 'AI提案生成中にエラーが発生しました。';
         }
+    }
+
+    /** ★ここを実際に使用（未使用警告の解消） */
+    private function handleOpenAiError($res): string
+    {
+        $status = (int) $res->status();
+        $code   = data_get($res->json(), 'error.code');
+
+        if ($status === 422) {
+            return 'OPENAI_API_KEYが未設定です。環境変数を設定してください。';
+        }
+        if ($status === 401 || $status === 403) {
+            return '認証に失敗しました。APIキーを確認してください。';
+        }
+        if ($status === 429 || $code === 'rate_limit_exceeded') {
+            return '短時間にリクエストが集中しています。しばらくしてから再試行してください。';
+        }
+        if ($code === 'insufficient_quota') {
+            return '利用上限に達しました。管理者に上限の調整を依頼してください。';
+        }
+        if ($status >= 500) {
+            return 'AIサービスが一時的に不安定です。時間をおいて再試行してください。';
+        }
+        return 'AI提案の生成に失敗しました。時間をおいて再試行してください。';
     }
 }

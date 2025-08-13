@@ -1,17 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
+import { api } from '@/lib/axios' // ★ AIはaxiosで叩く
 
-const { company } = defineProps({
-  company: Object
-})
+const { company } = defineProps<{ company: any }>()
 
 // ------------------------
-// 既存：履歴 CRUD 周り
+// 既存：履歴 CRUD 周り（そのまま）
 // ------------------------
 const formVisible = ref(false)
-const editingId = ref(null)
+const editingId = ref<number | null>(null)
 
 const form = ref({
   interaction_date: new Date().toISOString().slice(0, 10),
@@ -38,7 +37,7 @@ const submit = () => {
   })
 }
 
-const startEdit = (interaction) => {
+const startEdit = (interaction: any) => {
   editingId.value = interaction.id
   editForm.interaction_date = interaction.interaction_date
   editForm.type = interaction.type
@@ -50,7 +49,7 @@ const cancelEdit = () => {
   editForm.reset()
 }
 
-const submitEdit = (interactionId) => {
+const submitEdit = (interactionId: number) => {
   editForm.put(`/interactions/${interactionId}`, {
     onSuccess: () => {
       editingId.value = null
@@ -58,34 +57,72 @@ const submitEdit = (interactionId) => {
   })
 }
 
-const deleteInteraction = (interactionId) => {
+const deleteInteraction = (interactionId: number) => {
   if (confirm('この履歴を削除してもよろしいですか？')) {
     router.delete(`/interactions/${interactionId}`)
   }
 }
 
 // ------------------------
-// 追加：AIアクション提案
+// 追加：AIアクション提案（axiosで非同期）
 // ------------------------
 const page = usePage()
+const flashSuccess = computed(() => (page.props as any).flash?.success ?? null)
+const flashError = computed(() => (page.props as any).flash?.error ?? null)
 
-// フラッシュ（success / error / ai_advice）を Inertia 共有から取得
-const flashSuccess = computed(() => page.props.flash?.success ?? null)
-const flashError   = computed(() => page.props.flash?.error ?? null)
-const aiAdvice     = computed(() => page.props.flash?.ai_advice ?? '')
+// 初期表示のみフラッシュ、以降はローカルに反映
+const aiAdvice = ref<string>((page.props as any).flash?.ai_advice ?? '')
 
-// 生成中のローディング状態
 const isGenerating = ref(false)
+const cooldown = ref(0)
+let timer: number | null = null
 
-// 空フォームで POST するだけ（サーバ側で company と直近履歴から生成）
-const aiForm = useForm({})
+const showError = ref(false)        // エラー表示制御
+const errorMsg = ref<string>('')     // エラーメッセージ
 
-const generateAdvice = () => {
-  aiForm.post(`/companies/${company.id}/ai/advise`, {
-    preserveScroll: true,
-    onStart: () => { isGenerating.value = true },
-    onFinish: () => { isGenerating.value = false },
-  })
+// ★ 追加：エラーコード → 表示文言マップ（案1）
+const ERROR_MESSAGES: Record<string, string> = {
+  OPENAI_API_KEY_MISSING: 'OpenAIのAPIキーが未設定です。管理者に連絡してください。',
+  RATE_LIMITED: 'リクエストが多すぎます。しばらく待って再試行してください。',
+  OPENAI_ERROR: 'AI処理中にエラーが発生しました。',
+}
+
+const startCooldown = (sec: number) => {
+  cooldown.value = Math.max(1, Math.floor(sec))
+  if (timer) window.clearInterval(timer)
+  timer = window.setInterval(() => {
+    cooldown.value -= 1
+    if (cooldown.value <= 0 && timer) {
+      window.clearInterval(timer)
+      timer = null
+    }
+  }, 1000)
+}
+
+const generateAdvice = async () => {
+  if (cooldown.value > 0 || isGenerating.value) return
+  isGenerating.value = true
+  showError.value = false
+  errorMsg.value = ''
+
+  try {
+    const res = await api.post(`/companies/${company.id}/ai/advise`, {})
+    aiAdvice.value = res.data?.data?.advice ?? '(内容なし)'
+  } catch (e: any) {
+    // 429（レート制限）
+    if (e?.__rateLimited) {
+      const sec = Number(e.payload?.retry_after ?? e.response?.headers?.['retry-after'] ?? 60)
+      startCooldown(sec)
+    } else {
+      // ★ 案1：code を優先してフロント側の固定文言を出す
+      const code = e?.payload?.code as string | undefined
+      const mapped = code ? ERROR_MESSAGES[code] : undefined
+      errorMsg.value = mapped || e?.payload?.message || '通信に失敗しました。しばらくしてからお試しください。'
+      showError.value = true
+    }
+  } finally {
+    isGenerating.value = false
+  }
 }
 </script>
 
@@ -133,7 +170,8 @@ const generateAdvice = () => {
           v-for="tag in company.tags"
           :key="tag.id ?? tag.name"
           class="inline-block text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded-full mr-2"
-        >{{ tag.name }}</span>
+          >{{ tag.name }}</span
+        >
       </p>
       <p class="mb-1">担当者：{{ company.contact_person || '未設定' }}</p>
       <p class="mb-1">
@@ -150,7 +188,7 @@ const generateAdvice = () => {
       <p class="mt-4 text-gray-700 whitespace-pre-line">メモ：{{ company.memo || 'なし' }}</p>
     </div>
 
-    <!-- ☆ AIアクション提案ブロック -->
+    <!-- ☆ AIアクション提案ブロック（axios+JSON） -->
     <div class="px-10 py-8 bg-gray-50">
       <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-md">
         <div class="flex items-center justify-between">
@@ -158,11 +196,18 @@ const generateAdvice = () => {
           <button
             @click="generateAdvice"
             class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition disabled:opacity-60"
-            :disabled="isGenerating"
+            :disabled="isGenerating || cooldown > 0"
           >
-            <span v-if="isGenerating">生成中...</span>
+            <span v-if="cooldown > 0">再試行まで {{ cooldown }}s</span>
+            <span v-else-if="isGenerating">生成中...</span>
             <span v-else>生成する</span>
           </button>
+        </div>
+
+        <!-- エラー表示（codeベース） -->
+        <div v-if="showError" class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm">
+          <p class="font-medium text-red-700">{{ errorMsg }}</p>
+          <p v-if="cooldown > 0" class="text-red-600 mt-1">あと {{ cooldown }} 秒で再試行できます。</p>
         </div>
 
         <div class="mt-4 whitespace-pre-wrap text-gray-800 leading-relaxed">
@@ -243,7 +288,11 @@ const generateAdvice = () => {
 
     <!-- 新規履歴登録フォーム -->
     <div class="px-10 pb-10 bg-gray-100">
-      <button v-if="!formVisible" class="mt-4 px-6 py-3 bg-black text-white rounded hover:bg-gray-800 transition" @click="formVisible = true">
+      <button
+        v-if="!formVisible"
+        class="mt-4 px-6 py-3 bg-black text-white rounded hover:bg-gray-800 transition"
+        @click="formVisible = true"
+      >
         ＋ 新規履歴を登録
       </button>
 

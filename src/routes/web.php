@@ -44,8 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ★ AI提案（Company 詳細画面から叩く）
     Route::post('/companies/{company}/ai/advise', [CompanyAiController::class, 'advise'])
-        ->name('companies.ai.advise')
-        ->middleware('throttle:ai');
+        ->name('companies.ai.advise');
 });
 
 // ローカル開発用の即ログインルート

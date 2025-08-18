@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class CompanyAiController extends Controller
 {
@@ -60,6 +61,7 @@ class CompanyAiController extends Controller
     /** エラーを必ずJSONで整形（429はRetry-After付き） */
     protected function handleOpenAiError(\Throwable $e): JsonResponse
     {
+        // APIキー未設定（保険）
         if (empty(config('services.openai.key'))) {
             return response()->json([
                 'ok'      => false,
@@ -68,6 +70,7 @@ class CompanyAiController extends Controller
             ], 503);
         }
 
+        // レート制限（429）
         if ($e instanceof TooManyRequestsHttpException) {
             $retry = (int)($e->getHeaders()['Retry-After'] ?? 60);
 
@@ -81,6 +84,16 @@ class CompanyAiController extends Controller
                 ->withHeaders(['Retry-After' => $retry]);
         }
 
+        // サービス停止・外部要因（503）
+        if ($e instanceof ServiceUnavailableHttpException) {
+            return response()->json([
+                'ok'      => false,
+                'code'    => 'OPENAI_ERROR',
+                'message' => $e->getMessage() ?: 'Service unavailable',
+            ], 503);
+        }
+
+        // 想定外は500
         return response()->json([
             'ok'      => false,
             'code'    => 'OPENAI_ERROR',

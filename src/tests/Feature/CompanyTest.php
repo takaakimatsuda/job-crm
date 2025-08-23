@@ -5,13 +5,14 @@ namespace Tests\Feature;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CompanyTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function 企業情報を更新できる()
     {
         $user = User::factory()->create(); // ログインユーザー
@@ -34,7 +35,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function 必須項目が抜けていると更新できない()
     {
         $user = User::factory()->create();
@@ -44,7 +45,7 @@ class CompanyTest extends TestCase
             ->actingAs($user)
             ->from(route('companies.edit', $company))
             ->put(route('companies.update', $company), [
-                'name' => '',         // 必須
+                'name' => '', // 必須
             ]);
 
         $response->assertRedirect(route('companies.edit', $company));

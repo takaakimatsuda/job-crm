@@ -5,13 +5,14 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class InteractionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function 履歴を登録できる()
     {
         $user = User::factory()->create();
@@ -32,7 +33,7 @@ class InteractionTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function 履歴を編集できる()
     {
         $user = User::factory()->create();
@@ -58,7 +59,7 @@ class InteractionTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function 履歴を削除できる()
     {
         $user = User::factory()->create();

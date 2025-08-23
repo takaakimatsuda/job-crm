@@ -30,12 +30,17 @@ class CompanyController extends Controller
             $query->where('hope_level', $request->hope_level);
         }
 
-        // 複数タグ（OR検索）
+        // ▼ 複数タグ（AND検索）
         if ($request->filled('tags')) {
-            $tagNames = $request->input('tags');
-            $query->whereHas('tags', function ($q) use ($tagNames) {
-                $q->whereIn('name', $tagNames);
-            });
+            $tagNames = array_values(array_unique(array_filter((array) $request->input('tags'))));
+
+            // すべての指定タグを持つ会社のみ抽出
+            $query->whereHas(
+                'tags',
+                fn($q) => $q->whereIn('tags.name', $tagNames),
+                '=',                               // ← マッチ件数の演算子
+                count($tagNames)                   // ← 指定タグ数と完全一致
+            );
         }
 
         $companies = $query->with('tags')->latest()->get();
@@ -139,7 +144,6 @@ class CompanyController extends Controller
             }
         }
 
-        // フラッシュメッセージをセッションにセット
         return redirect()
             ->route('companies.show', $company->id)
             ->with('success', '企業情報を更新しました。');
@@ -159,7 +163,6 @@ class CompanyController extends Controller
      */
     public function advise(Request $request, Company $company, ChatGptService $gpt)
     {
-        // 認可を使うなら有効化（必要なければコメントアウトのままでもOK）
         // $this->authorize('view', $company);
 
         // 直近の履歴を取得（interaction_date の降順）

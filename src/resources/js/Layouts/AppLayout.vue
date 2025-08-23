@@ -5,19 +5,13 @@ import { ref, computed } from 'vue'
 const page = usePage()
 
 const sidebarOpen = ref(true)
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value
-}
+const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 
 const userMenuOpen = ref(false)
-const toggleUserMenu = () => {
-  userMenuOpen.value = !userMenuOpen.value
-}
+const toggleUserMenu = () => { userMenuOpen.value = !userMenuOpen.value }
 
-// ダミーユーザー（実際は props で受け取る）
-const user = {
-  name: 'matsudatakaaki@example.com',
-}
+// ✅ Inertiaの共有プロップからログインユーザーを取得
+const user = computed(() => page.props.auth?.user ?? { name: '', email: '' })
 
 // 現在のページ名を動的に表示
 const pageTitle = computed(() => {
@@ -96,6 +90,7 @@ const pageTitle = computed(() => {
             v-show="userMenuOpen"
             class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow-lg z-40"
           >
+            <!-- ✅ nameを表示 -->
             <div class="px-4 py-2 border-b text-sm text-gray-700">{{ user.name }}</div>
             <Link href="/profile" class="block px-4 py-2 text-sm hover:bg-gray-100">プロフィール</Link>
             <form method="POST" action="/logout" class="block">

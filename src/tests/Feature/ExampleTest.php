@@ -2,18 +2,36 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
-    {
-        $response = $this->get('/');
+    use RefreshDatabase; // ← 追加：テストごとにmigrateしてロールバック
 
-        $response->assertStatus(200);
+    #[Test]
+    public function guest_is_redirected_from_root_to_login(): void
+    {
+        $this->get('/')
+            ->assertRedirect(route('login'));
+    }
+
+    #[Test]
+    public function authenticated_user_is_redirected_from_root_to_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertRedirect(route('dashboard'));
+    }
+
+    #[Test]
+    public function login_page_is_accessible(): void
+    {
+        $this->get(route('login'))
+            ->assertStatus(200);
     }
 }

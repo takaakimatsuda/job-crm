@@ -128,7 +128,7 @@ if ($request->filled('tags')) {
 
 ---
 
-## 🤖 AI 連携（予定）
+## 🤖 AI 連携
 
 * 企業詳細ページから「AIアクション提案」を生成
 * OpenAI API を利用

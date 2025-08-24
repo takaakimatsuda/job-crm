@@ -1,61 +1,157 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Job CRM
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+転職活動を効率化するための CRM アプリケーション。
+Laravel 12 + Inertia.js + Vue 3 + Tailwind CSS 構成で構築。
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📦 技術スタック
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Laravel 12 (PHP 8.3)
+- Inertia.js + Vue 3 (Composition API)
+- Tailwind CSS
+- MySQL 8.x
+- Docker (php-fpm, nginx, node, mysql)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🚀 セットアップ
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+# コンテナ起動
+docker compose up -d
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+# Laravel 初期化
+docker compose exec app composer install
+docker compose exec app cp .env.example .env
+docker compose exec app php artisan key:generate
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# フロントエンド
+docker compose exec node npm install
+docker compose exec node npm run dev
+````
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🗄️ ER 図
 
-### Premium Partners
+```
+companies      - 企業
+interactions   - 面談ややりとり履歴
+tags           - タグ（エンジニア、上場企業、リモートなど）
+company_tag    - 企業とタグの中間テーブル
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+* **companies**
 
-## Contributing
+  * name, status（未応募、面接中、内定、辞退...）
+  * hope\_level（1〜5）
+  * tags（json形式）
+  * contact\_person, email, phone, website\_url, memo
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+* **interactions**
 
-## Code of Conduct
+  * company\_id（FK）
+  * interaction\_date, type（電話/面談/メール）
+  * memo, summary（GPT要約）
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+* **tags**
 
-## Security Vulnerabilities
+  * name（一意）
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+* **company\_tag**
 
-## License
+  * company\_id, tag\_id
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 🌱 シーディング
+
+* `UserSeeder` : ログイン用ユーザー
+* `CompanySeeder` : ダミー企業
+* `InteractionSeeder` : ダミー履歴
+* `TagsSeeder` : 技術・企業属性・条件などのタグ
+* `CompanyTagSeeder` : 各企業にランダムで 1〜3 個のタグを付与
+
+実行方法:
+
+```bash
+docker compose exec app php artisan migrate:fresh --seed
+```
+
+---
+
+## 🔍 検索・フィルタ機能
+
+* 企業一覧で以下の条件検索が可能:
+
+  * 企業名（部分一致）
+  * ステータス
+  * 希望度
+  * タグ（複数選択時は **AND 検索**）
+
+実装例（`CompanyController@index`）:
+
+```php
+if ($request->filled('tags')) {
+    $tagNames = $request->input('tags');
+    $query->whereHas(
+        'tags',
+        fn ($q) => $q->whereIn('tags.name', $tagNames),
+        '=',
+        count($tagNames)
+    );
+}
+```
+
+---
+
+## 📊 ダッシュボード
+
+* 登録企業数、面接中、内定獲得 のサマリーカード
+* 最近の更新履歴（タイムライン形式）
+
+### カードクリック時の遷移
+
+* **登録企業数** → `/companies`
+* **面接中** → `/companies?status=面接中`
+* **内定獲得** → `/companies?status=内定`
+
+---
+
+## 👤 ユーザー管理
+
+* プロフィール編集画面を共通レイアウト（`AppLayout`）に統一
+* トップバー右上のユーザーアイコンメニューでユーザー名を表示
+
+  * `usePage().props.auth.user.name` を利用
+
+---
+
+## 🤖 AI 連携（予定）
+
+* 企業詳細ページから「AIアクション提案」を生成
+* OpenAI API を利用
+* 直近の履歴、メモ、ステータスをもとに提案文を返却
+
+---
+
+## ✅ テスト
+
+* Feature / Unit テストはすべて **PHPUnit 12 対応済み（属性ベース）**
+* Company / Interaction / AI 提案機能などを網羅
+
+実行方法:
+
+```bash
+docker compose exec app php artisan test
+```
+
+---
+
+## 今後の改善 TODO
+
+* axios interceptor によるエラーハンドリング統一（429/503 UI）
+* E2E テスト（Cypress 導入）
+* 企業タグの UI 改善（選択型入力）
+* AI 提案の履歴保存と活用
